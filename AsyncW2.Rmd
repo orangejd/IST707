@@ -1,0 +1,137 @@
+---
+title: "Week2 Async"
+author: "Jenn Dandrea"
+date: "10/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+```{r}
+#read in raw data
+titantic<-read.csv("/Users/jenndand/Desktop/Syracuse/707/707R/TitanticRaw.csv")
+str(titantic)
+
+#2.5, converting passenger ID to factor
+titantic$PassengerId<-factor(titantic$PassengerId)
+str(titantic$PassengerId)
+```
+2.6
+The ages had the most missing values.I'm going to omit the age where they are missing. because I dont want to throw off the data if I want to caluate average age of people, but maybe the sex/class is critical, so i dont want to remove the whole rows of data.
+
+```{r}
+#2.6 how many missing items
+length(which(is.na(titantic)))
+#87 missing values
+nrow(titantic[!complete.cases(titantic),])
+#87 rows are not complete
+nrow(titantic[complete.cases(titantic),])
+#331 rows are complete
+
+length(which(is.na(titantic$Age)))
+#86 rows are missing an age values, and 87 (above) had not complete rows. 
+table(is.na(titantic)) #provides how many entries do not have NA in them and how many do
+sapply(titantic, function(x) sum(is.na(x))) #provides a count of n/a by each column
+titantic[!complete.cases(titantic),] #Shows all rows with n/a in them
+
+titantic$Fare[is.na(titantic$Fare)] <- mean(titantic$Fare, na.rm = TRUE) #replacing the Fare n/a with an average of the fare prices
+titantic <- na.omit(titantic) #omiting the na in the data
+
+
+```
+
+2.7
+```{r}
+#mean = 2.2
+mean(titantic$Pclass) 
+# median = 3
+median(titantic$Pclass)
+#mode 3
+table(titantic$Pclass)[which.max(table(titantic$Pclass))] # mode
+
+#creating a table of the frequence, 1=107, 2=93, 3=218. Most people were in the 3 class
+freq<-table(titantic$Pclass) # frequency distribution
+freq
+
+table(titantic$Pclass)[which.max(table(titantic$Pclass))] # mode
+#Variance = .70
+var(titantic$Pclass) # variance
+#standard deviation =.84
+sd(titantic$Pclass) # standard deviation
+#max = 3
+max(titantic$Pclass)
+#min =1
+min(titantic$Pclass)
+
+```
+2.8.1
+```{r}
+# Histogram of the PClass
+#Creating smaller subset with just the pclass=3
+Pclass3<- titantic[titantic$Pclass == "3",]
+boxplot(Pclass3$Fare,  main="Pclass 3 v Fare", xlab="Pclass 3", ylab="Fare")
+#There are 9 outliers in this data
+
+
+hist(Pclass3$Fare) #, main="Pclass v Fare", xlab="Pclass") 
+
+# Boxplot for all pClasses
+boxplot(Fare~Pclass,data=titantic, main="Pclass v Fare", xlab="Pclass", ylab="Fare") 
+
+
+#Crosstab of the embark locations and if the passengered survived (1 for=surivied, 0=died)
+EmbarSurvived<-table(titantic$Embarked, titantic$Survived)
+EmbarSurvived
+#corrolation between the S location and non-surviving is high. Do an additional cross tab of the Pclass and the embarked, 142 people from S were Pclass=3. So they were in the lower class, and therefor more probable to die.
+
+PClassSurvived1<-table(titantic$Pclass,  titantic$Embarked)
+PClassSurvived1
+```
+
+2.9 Aggregation the average fare for men and for women in the Titanic data set.
+```{r}
+
+attach(titantic)
+
+aggregate(Fare~Sex, data=titantic, FUN=mean)
+
+```
+2.10.1 Exercise: Transformation Choose a numeric variable in the Titanic data set and transform it using discretization, log, z-score, and min-max transformation.
+```{r}
+#Selecting Age since it is a numberic value in the data
+#calculating the Z score
+scale(titantic$Age, center = TRUE, scale = TRUE)
+
+#Discretization
+age <- cut(titantic$Age, breaks =c(0,10,20,30,40,50,60,Inf),labels=c("child","teens","twenties","thirties","fourties","fifties","old"))
+table(age)
+#most people where in their 20s
+
+#Log transformation
+plot(titantic$Age, log(titantic$Age))
+
+#Min-max transformation 
+Min_max <-(titantic$Age-min(titantic$Age,na.rm=TRUE))/(max(titantic$Age,na.rm=TRUE)-min(titantic$Age,na.rm=TRUE))
+
+plot(Min_max, titantic$Age)
+
+```
+2.11 Produce a random sample of 100 examples out of the Titanic data. Produce a systematic sample of 100 examples out of the Titanic data. Show your R code.
+```{r}
+sample <- titantic[sample(1:nrow(titantic), 100, replace=FALSE), ]
+# pulling 100 samples with out replacement. 
+
+#View(sample) this will show all the samples, which I dont want to do right now
+table(sample$Survived) #table of the sample for survived and did not 
+table(titantic$Survived) #table of the raw data of survived and did not
+
+
+#Systematic sampling
+
+syssample<-titantic[seq(1, nrow(titantic),22),] # sample every 22 lines
+syssample
+
+```
